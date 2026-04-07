@@ -7,10 +7,9 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import CategoryItem from "../components/CategoryItem";
-import colors from "../theme/colors";
+import colors from "../../assets/theme/colors";
 
 export default function HomeScreen() {
   return (
@@ -37,7 +36,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
 
           <Image
-            source={require("../../assets/Kesenian Nusantara.png")}
+            source={require("../../assets/kesenian_nusantara.png")}
             style={styles.image}
           />
         </View>
@@ -47,11 +46,60 @@ export default function HomeScreen() {
           <Text style={styles.sectionTitle}>Yuk pilih tantangan seru dan uji pengetahuanmu!</Text>
         </View>
 
-        <CategoryItem title="Seni Tari" desc="Gerak penuh makna dari budaya Nusantara." icon="accessibility-new" />
-        <CategoryItem title="Seni Musik" desc="Irama indah khas Indonesia." icon="music-note" />
-        <CategoryItem title="Seni Rupa" desc="Karya visual penuh kreativitas." icon="palette" />
-        <CategoryItem title="Seni Teater" desc="Cerita hidup di atas panggung." icon="theater-comedy" />
-        <CategoryItem title="Seni Kriya" desc="Karya tangan bernilai seni." icon="handyman" />
+        <View style={styles.item}>
+          <View style={styles.iconBox}>
+            <MaterialIcons name="accessibility-new" size={24} color={colors.primary} />
+          </View>
+          <View style={styles.itemContent}>
+            <Text style={styles.itemTitle}>Seni Tari</Text>
+            <Text style={styles.itemDesc}>Gerak penuh makna dari budaya Nusantara.</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#c07a5c" />
+        </View>
+
+        <View style={styles.item}>
+          <View style={styles.iconBox}>
+            <MaterialIcons name="music-note" size={24} color={colors.primary} />
+          </View>
+          <View style={styles.itemContent}>
+            <Text style={styles.itemTitle}>Seni Musik</Text>
+            <Text style={styles.itemDesc}>Irama indah khas Indonesia.</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#c07a5c" />
+        </View>
+
+        <View style={styles.item}>
+          <View style={styles.iconBox}>
+            <MaterialIcons name="palette" size={24} color={colors.primary} />
+          </View>
+          <View style={styles.itemContent}>
+            <Text style={styles.itemTitle}>Seni Rupa</Text>
+            <Text style={styles.itemDesc}>Karya visual penuh kreativitas.</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#c07a5c" />
+        </View>
+
+        <View style={styles.item}>
+          <View style={styles.iconBox}>
+            <MaterialIcons name="theater-comedy" size={24} color={colors.primary} />
+          </View>
+          <View style={styles.itemContent}>
+            <Text style={styles.itemTitle}>Seni Teater</Text>
+            <Text style={styles.itemDesc}>Cerita hidup di atas panggung.</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#c07a5c" />
+        </View>
+
+        <View style={styles.item}>
+          <View style={styles.iconBox}>
+            <MaterialIcons name="handyman" size={24} color={colors.primary} />
+          </View>
+          <View style={styles.itemContent}>
+            <Text style={styles.itemTitle}>Seni Kriya</Text>
+            <Text style={styles.itemDesc}>Karya tangan bernilai seni.</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#c07a5c" />
+        </View>
 
         <View style={{ height: 80 }} />
       </ScrollView>
@@ -76,31 +124,33 @@ export default function HomeScreen() {
   );
 }
 
+
 const styles = StyleSheet.create({
-  wrapper: { 
-    flex: 1, 
-    backgroundColor: "#f5f2ef" 
-},
-
-  container: { 
+  // Container utama
+  wrapper: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  container: {
     padding: 25,
-    paddingTop: 60,
-   },
+  },
 
+  // Header
   title: {
     fontSize: 34,
     fontWeight: "700",
+    color:  "#800000",
     textAlign: "center",
-    color: "#800000",
+    marginTop: -10,
   },
-
   subtitle: {
-    textAlign: "center",
-    color: "#777",
     fontStyle: "italic",
+    color: colors.subtext,
+    textAlign: "center",
     marginBottom: 20,
   },
 
+  // Hero Card
   card: {
     backgroundColor: "#960019",
     borderRadius: 20,
@@ -112,40 +162,26 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
   },
-
-  item: {
-  flexDirection: "row",
-  backgroundColor: "#f8f8f8",
-  padding: 14,
-  borderRadius: 16,
-  alignItems: "center",
-  marginBottom: 12,
-},
-
   cardTitle: {
-    color: "#fff",
     fontSize: 20,
     fontWeight: "bold",
+    color: colors.background,
   },
-
   cardDesc: {
-    color: "#f3e8e5",
+    color: colors.background,
+    textAlign: "justify",
     marginBottom: 10,
-    textAlign : 'justify',
   },
-
   button: {
-    backgroundColor: "#f5c76b",
+    backgroundColor: colors.secondary,
     padding: 12,
     borderRadius: 12,
     marginBottom: 10,
   },
-
   buttonText: {
     fontWeight: "bold",
     textAlign: 'center',
   },
-
   image: {
     width: "100%",
     height: 220,
@@ -153,50 +189,74 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
   },
 
-  rowBetween: {
-    flexDirection: "column",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-
+  // Section
   sectionTitle: {
     fontWeight: "bold",
     fontSize: 18,
   },
 
-  moreText: {
-    color: "#b55a3c",
-    fontWeight: "bold",
+  // Category Item
+  item: {
+    flexDirection: "row",
+    backgroundColor: "#eae6e3",
+    padding: 14,
+    borderRadius: 16,
+    alignItems: "center",
+    marginTop: 12,
+  },
+  iconBox: {
+    width: 55,
+    height: 55,
+    borderRadius: 12,
+    backgroundColor: "#f3e8e5",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  itemContent: {
+    flex: 1,
+  },
+  itemTitle: {
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  itemDesc: {
+    color: "#777",
+    fontSize: 12,
   },
 
-  navbar: {
+  // Navbar Bawah
+ navbar: {
     flexDirection: "row",
     justifyContent: "space-around",
     backgroundColor: "#fff",
     paddingVertical: 15,
     borderTopWidth: 0.5,
     borderColor: "#ddd",
+    position: "absolute",   
+    bottom: 0,              
+    left: 0,
+    right: 0,
   },
-
   navItem: {
     alignItems: "center",
   },
-
   navItemActive: {
     alignItems: "center",
     backgroundColor: "#f3e8e5",
-    padding: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
     borderRadius: 10,
   },
-
   navText: {
     fontSize: 10,
     color: "#888",
+    marginTop: 4,
   },
-
   navTextActive: {
     fontSize: 10,
     color: "#b55a3c",
     fontWeight: "bold",
+    marginTop: 4,
   },
 });
