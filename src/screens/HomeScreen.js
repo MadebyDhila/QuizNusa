@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,24 +9,26 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import colors from "../../assets/theme/colors";
 import CategoryItem from "../components/CategoryItem";
-import colors from "../theme/colors";
+import Navbar from "../components/Navbar";
+import { categories } from "../data/CategoryData";
 
 export default function HomeScreen() {
+  const [activeMenu, setActiveMenu] = useState("home");
+  const categoryList = categories;
+
   return (
     <SafeAreaView style={styles.wrapper}>
       <ScrollView contentContainerStyle={styles.container}>
-
+        {/* HEADER */}
         <Text style={styles.title}>QuizNusa</Text>
         <Text style={styles.subtitle}>
           Kenali Budayamu, Banggakan Negerimu
         </Text>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>
-            Kuis Ragam Seni Nusantara
-          </Text>
-
+          <Text style={styles.cardTitle}>Kuis Ragam Seni Nusantara</Text>
           <Text style={styles.cardDesc}>
             Siap-siap! Di kuis ini kamu akan menemukan berbagai pertanyaan dari beragam jenis kesenian. 
             Dari musik, tari, hingga seni rupa semuanya ada di sini. Yuk uji seberapa luas pengetahuan senimu!
@@ -37,72 +39,62 @@ export default function HomeScreen() {
           </TouchableOpacity>
 
           <Image
-            source={require("../../assets/Kesenian Nusantara.png")}
+            source={require("../../assets/kesenian_nusantara.png")}
             style={styles.image}
           />
         </View>
 
-        <View style={styles.rowBetween}>
-          <Text style={styles.sectionTitle}>Mau main apa hari ini?</Text>
-          <Text style={styles.sectionTitle}>Yuk pilih tantangan seru dan uji pengetahuanmu!</Text>
-        </View>
+        <Text style={styles.sectionTitle}>Mau main apa hari ini?</Text>
+        <Text style={styles.sectionSubtitle}>
+          Yuk pilih tantangan seru dan uji pengetahuanmu!
+        </Text>
 
-        <CategoryItem title="Seni Tari" desc="Gerak penuh makna dari budaya Nusantara." icon="accessibility-new" />
-        <CategoryItem title="Seni Musik" desc="Irama indah khas Indonesia." icon="music-note" />
-        <CategoryItem title="Seni Rupa" desc="Karya visual penuh kreativitas." icon="palette" />
-        <CategoryItem title="Seni Teater" desc="Cerita hidup di atas panggung." icon="theater-comedy" />
-        <CategoryItem title="Seni Kriya" desc="Karya tangan bernilai seni." icon="handyman" />
+        {categoryList.map((category) => (
+          <CategoryItem
+            key={category.id}
+            title={category.title}
+            desc={category.desc}
+            icon={category.icon}
+          />
+        ))}
 
         <View style={{ height: 80 }} />
       </ScrollView>
 
-      <View style={styles.navbar}>
-        <View style={styles.navItemActive}>
-          <Ionicons name="home" size={20} color={colors.primary} />
-          <Text style={styles.navTextActive}>HOME</Text>
-        </View>
-
-        <View style={styles.navItem}>
-          <Ionicons name="bar-chart" size={20} color="#999" />
-          <Text style={styles.navText}>LEADERBOARD</Text>
-        </View>
-
-        <View style={styles.navItem}>
-          <Ionicons name="time" size={20} color="#999" />
-          <Text style={styles.navText}>HISTORY</Text>
-        </View>
-      </View>
+      <Navbar activeMenu={activeMenu} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: { 
-    flex: 1, 
-    backgroundColor: "#f5f2ef" 
-},
-
-  container: { 
+  // Container utama
+  wrapper: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  container: {
     padding: 25,
-    paddingTop: 60,
-   },
+    paddingBottom: 80,
+  },
 
+  // Header
   title: {
     fontSize: 34,
     fontWeight: "700",
-    textAlign: "center",
     color: "#800000",
-  },
-
-  subtitle: {
     textAlign: "center",
-    color: "#777",
+    marginTop: 40,
+  },
+  subtitle: {
     fontStyle: "italic",
+    color: colors.subtext,
+    textAlign: "center",
     marginBottom: 20,
   },
 
+  // Hero Card
   card: {
-    backgroundColor: "#960019",
+    backgroundColor: colors.primary,
     borderRadius: 20,
     padding: 16,
     marginTop: 15,
@@ -112,40 +104,27 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
   },
-
-  item: {
-  flexDirection: "row",
-  backgroundColor: "#f8f8f8",
-  padding: 14,
-  borderRadius: 16,
-  alignItems: "center",
-  marginBottom: 12,
-},
-
   cardTitle: {
-    color: "#fff",
     fontSize: 20,
     fontWeight: "bold",
+    color: colors.background,
   },
-
   cardDesc: {
-    color: "#f3e8e5",
+    color: colors.background,
+    textAlign: "justify",
     marginBottom: 10,
-    textAlign : 'justify',
   },
-
   button: {
-    backgroundColor: "#f5c76b",
+    backgroundColor: colors.secondary,
     padding: 12,
     borderRadius: 12,
     marginBottom: 10,
   },
-
   buttonText: {
     fontWeight: "bold",
-    textAlign: 'center',
+    textAlign: "center",
+    color: colors.text,
   },
-
   image: {
     width: "100%",
     height: 220,
@@ -153,50 +132,15 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
   },
 
-  rowBetween: {
-    flexDirection: "column",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-
+  // Section
   sectionTitle: {
     fontWeight: "bold",
     fontSize: 18,
+    color: colors.text,
   },
-
-  moreText: {
-    color: "#b55a3c",
-    fontWeight: "bold",
-  },
-
-  navbar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    backgroundColor: "#fff",
-    paddingVertical: 15,
-    borderTopWidth: 0.5,
-    borderColor: "#ddd",
-  },
-
-  navItem: {
-    alignItems: "center",
-  },
-
-  navItemActive: {
-    alignItems: "center",
-    backgroundColor: "#f3e8e5",
-    padding: 8,
-    borderRadius: 10,
-  },
-
-  navText: {
-    fontSize: 10,
-    color: "#888",
-  },
-
-  navTextActive: {
-    fontSize: 10,
-    color: "#b55a3c",
-    fontWeight: "bold",
+  sectionSubtitle: {
+    fontSize: 14,
+    color: colors.subtext,
+    marginBottom: 5,
   },
 });

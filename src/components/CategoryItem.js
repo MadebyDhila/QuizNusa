@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import colors from "../theme/colors";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import colors from "../../assets/theme/colors";
 
 export default function CategoryItem({ title, desc, icon }) {
   return (
@@ -9,12 +9,10 @@ export default function CategoryItem({ title, desc, icon }) {
       <View style={styles.iconBox}>
         <MaterialIcons name={icon} size={24} color={colors.primary} />
       </View>
-
-      <View style={{ flex: 1 }}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.desc}>{desc}</Text>
+      <View style={styles.itemContent}>
+        <Text style={styles.itemTitle}>{title}</Text>
+        <Text style={styles.itemDesc}>{desc}</Text>
       </View>
-
       <Ionicons name="chevron-forward" size={18} color="#c07a5c" />
     </View>
   );
@@ -27,9 +25,8 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 16,
     alignItems: "center",
-    marginBottom: 12,
+    marginTop: 12,
   },
-
   iconBox: {
     width: 55,
     height: 55,
@@ -39,14 +36,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 12,
   },
-
-  title: {
+  itemContent: {
+    flex: 1,
+  },
+  itemTitle: {
     fontWeight: "600",
     fontSize: 14,
+    color: colors.text,
   },
-
-  desc: {
-    color: "#777",
+  itemDesc: {
+    color: colors.subtext,
     fontSize: 12,
   },
 });
