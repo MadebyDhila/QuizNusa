@@ -3,412 +3,347 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
+  Alert,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import colors from "../../assets/theme/colors";
 import { quizData } from "../data/Quiz";
 
 export default function Quiz() {
-  const [activeMenu, setActiveMenu] = useState("home");
+  const navigation = useNavigation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [isFinished, setIsFinished] = useState(false);
   const [score, setScore] = useState(0);
 
-  const menus = [
-    { key: "home", label: "HOME", icon: "home-outline", iconActive: "home" },
-    { key: "leaderboard", label: "LEADERBOARD", icon: "trophy-outline", iconActive: "trophy" },
-    { key: "history", label: "HISTORY", icon: "time-outline", iconActive: "time" },
-  ];
-
-  const currentQuestion = quizData[currentIndex];
   const totalQuestions = quizData.length;
+  const currentQuestion = quizData[currentIndex];
+  const progressPercent = ((currentIndex + 1) / totalQuestions) * 100; // 🔥 TAMBAH INI
 
-  const handleSelectAnswer = (answerIndex) => {};
-  const handleNext = () => {};
-  const handlePrev = () => {};
-  const handleRestart = () => {};
-  const handleBack = () => {};
+  const handleSelectAnswer = (index) => {
+    setSelectedAnswers({
+      ...selectedAnswers,
+      [currentIndex]: index,
+    });
+  };
 
+  const handleNext = () => {
+    if (selectedAnswers[currentIndex] === undefined) {
+      Alert.alert("Peringatan", "Silakan pilih jawaban terlebih dahulu");
+      return;
+    }
+
+    if (currentIndex + 1 < totalQuestions) {
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      let finalScore = 0;
+
+      quizData.forEach((q, i) => {
+        if (selectedAnswers[i] === q.correct) {
+          finalScore++;
+        }
+      });
+
+      setScore(finalScore);
+      setIsFinished(true);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const handleRestart = () => {
+    setCurrentIndex(0);
+    setSelectedAnswers({});
+    setIsFinished(false);
+    setScore(0);
+  };
+
+  const handleBackToPreparation = () => {
+    navigation.navigate("Preparation");
+  };
+
+  // ================= RESULT SCREEN =================
   if (isFinished) {
     return (
-      <SafeAreaView style={styles.wrapper}>
-        <View style={styles.resultContainer}>
-          <Text style={styles.resultEmoji}>🏆</Text>
-          <Text style={styles.resultTitle}>Selesai!</Text>
-          <Text style={styles.resultScore}>
-            Skor: 0 / {totalQuestions}
-          </Text>
-          <Text style={styles.resultMessage}>
-            Ayo lebih giat belajar kesenian Nusantara!
-          </Text>
-          <TouchableOpacity style={styles.restartButton} activeOpacity={1}>
-            <Text style={styles.restartButtonText}>Kerjakan Ulang</Text>
-          </TouchableOpacity>
-        </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.resultBox}>
+          <Text style={styles.resultEmoji}>🎉</Text>
 
-        <View style={styles.navbar}>
-          {menus.map((menu) => {
-            const isActive = activeMenu === menu.key;
-            return (
-              <TouchableOpacity
-                key={menu.key}
-                style={[styles.navItem, isActive && styles.navItemActive]}
-                activeOpacity={1}
-              >
-                <Ionicons
-                  name={isActive ? menu.iconActive : menu.icon}
-                  size={22}
-                  color={isActive ? colors.primary : "#999"}
-                />
-                <Text style={[styles.navText, isActive && styles.navTextActive]}>
-                  {menu.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+          <Text style={styles.resultTitle}>Selesai!</Text>
+
+          <Text style={styles.resultScore}>
+            Skor: {score} / {totalQuestions}
+          </Text>
+
+          <TouchableOpacity
+            style={styles.restartButton}
+            onPress={handleRestart}
+          >
+            <Text style={styles.restartText}>Kerjakan Ulang</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.backToPrepButton}
+            onPress={handleBackToPreparation}
+          >
+            <Text style={styles.backToPrepText}>Kembali ke Preparation</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
+  // ================= QUIZ SCREEN =================
   return (
-    <SafeAreaView style={styles.wrapper}>
-      <ScrollView 
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* HEADER */}
-        <View style={styles.header}>
-          <View style={styles.backButton}>
-            <Ionicons name="chevron-back" size={28} color={colors.primary} />
-          </View>
-          <Text style={styles.headerTitle}>Kuis Seni Tari</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+
+        {/* BACK */}
+        <TouchableOpacity
+          onPress={handleBackToPreparation}
+          style={styles.backButton}
+        >
+          <Text style={styles.backButtonText}>←   Kembali</Text>
+        </TouchableOpacity>
+
+        {/* 🔥 PROGRESS BAR TIPIS - TAMBAHAN DI SINI */}
+        <View style={styles.progressBarContainer}>
+          <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
         </View>
 
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${((currentIndex + 1) / totalQuestions) * 100}%` },
-              ]}
-            />
-          </View>
-          <Text style={styles.progressText}>
-            Soal {currentIndex + 1} dari {totalQuestions}
+        {/* PROGRESS */}
+        <Text style={styles.progress}>
+          Soal {currentIndex + 1} dari {totalQuestions}
+        </Text>
+
+        {/* QUESTION */}
+        <View style={styles.questionCard}>
+          <Text style={styles.questionText}>
+            {currentQuestion.question}
           </Text>
         </View>
 
-        <View style={styles.questionCard}>
-          <Text style={styles.questionText}>{currentQuestion.question}</Text>
-        </View>
+        {/* OPTIONS */}
+        {currentQuestion.options.map((option, idx) => {
+          const isSelected = selectedAnswers[currentIndex] === idx;
 
-        <View style={styles.optionsContainer}>
-          {currentQuestion.options.map((option, idx) => {
-            const isSelected = selectedAnswers[currentIndex] === idx;
-            const letters = ["A", "B", "C", "D"];
-            return (
-              <View
-                key={idx}
-                style={[styles.optionCard, isSelected && styles.optionSelected]}
-              >
-                <View style={styles.optionRow}>
-                  <View style={[styles.letterBox, isSelected && styles.letterBoxSelected]}>
-                    <Text style={[styles.letterText, isSelected && styles.letterTextSelected]}>
-                      {letters[idx]}
-                    </Text>
-                  </View>
-                  <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
-                    {option}
-                  </Text>
-                </View>
-              </View>
-            );
-          })}
-        </View>
-
-        <View style={styles.navigationButtons}>
-          {currentIndex > 0 && (
-            <View style={styles.prevButton}>
-              <Ionicons name="chevron-back" size={20} color={colors.primary} />
-              <Text style={styles.prevButtonText}>Sebelumnya</Text>
-            </View>
-          )}
-          <View style={[styles.nextButton, currentIndex === 0 && { flex: 1 }]}>
-            <Text style={styles.nextButtonText}>
-              {currentIndex + 1 === totalQuestions ? "Selesai" : "Selanjutnya"}
-            </Text>
-            <Ionicons name="chevron-forward" size={20} color="#fff" />
-          </View>
-        </View>
-
-        <View style={styles.spacer} />
-      </ScrollView>
-
-      <View style={styles.navbar}>
-        {menus.map((menu) => {
-          const isActive = activeMenu === menu.key;
           return (
-            <View
-              key={menu.key}
-              style={[styles.navItem, isActive && styles.navItemActive]}
+            <TouchableOpacity
+              key={idx}
+              style={[
+                styles.option,
+                isSelected && styles.optionSelected,
+              ]}
+              onPress={() => handleSelectAnswer(idx)}
             >
-              <Ionicons
-                name={isActive ? menu.iconActive : menu.icon}
-                size={22}
-                color={isActive ? colors.primary : "#999"}
-              />
-              <Text style={[styles.navText, isActive && styles.navTextActive]}>
-                {menu.label}
+              <Text
+                style={[
+                  styles.optionText,
+                  isSelected && styles.optionTextSelected,
+                ]}
+              >
+                {String.fromCharCode(65 + idx)}. {option}
               </Text>
-            </View>
+            </TouchableOpacity>
           );
         })}
+
+        {/* BUTTONS */}
+        <View style={styles.buttonRow}>
+          {currentIndex > 0 && (
+            <TouchableOpacity
+              style={styles.prevButton}
+              onPress={handlePrev}
+            >
+              <Text style={styles.prevText}>Sebelumnya</Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            style={styles.nextButton}
+            onPress={handleNext}
+          >
+            <Text style={styles.nextText}>
+              {currentIndex + 1 === totalQuestions
+                ? "Selesai"
+                : "Selanjutnya"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
       </View>
     </SafeAreaView>
   );
 }
 
+// ================= STYLE =================
 const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
-    padding: 25,
-    paddingTop: 10,
-    paddingBottom: 0,
+    flex: 1,
+    backgroundColor: "#F5F5F5",
   },
 
-  // Header
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
+  content: {
+    flex: 1,
+    padding: 20,
   },
+
   backButton: {
-    marginRight: 30,
+    marginBottom: 15,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: colors.text,
-    textAlign: "left",
+  backButtonText: {
+    fontSize: 18,
+    color: "#800000",
+    fontWeight: "500",
   },
 
-  // Progress bar
-  progressContainer: {
-    marginBottom: 24,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: colors.border,
-    borderRadius: 4,
+  // 🔥 PROGRESS BAR TIPIS - TAMBAHAN STYLE DI SINI
+  progressBarContainer: {
+    height: 3,
+    backgroundColor: "#E0E0E0",
+    borderRadius: 1.5,
+    marginBottom: 8,
     overflow: "hidden",
   },
-  progressFill: {
+  progressBarFill: {
     height: "100%",
-    backgroundColor: colors.primary,
-    borderRadius: 4,
-  },
-  progressText: {
-    fontSize: 12,
-    color: colors.textLight,
-    marginTop: 8,
-    textAlign: "right",
+    backgroundColor: "#800000",
+    borderRadius: 1.5,
   },
 
-  // Card soal
+  progress: {
+    textAlign: "right",
+    fontSize: 13,
+    color: "#777",
+    marginBottom: 10,
+  },
+
   questionCard: {
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 20,
+    padding: 18,
+    borderRadius: 14,
     marginBottom: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    elevation: 2,
   },
+
   questionText: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: colors.text,
-    lineHeight: 26,
+    fontWeight: "600",
+    color: "#333",
+    lineHeight: 24,
   },
 
-  // Pilihan jawaban
-  optionsContainer: {
-    gap: 12,
-    marginBottom: 24,
-  },
-  optionCard: {
+  option: {
     backgroundColor: "#fff",
-    borderRadius: 12,
     padding: 14,
+    borderRadius: 10,
+    marginBottom: 10,
     borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  optionSelected: {
-    borderColor: colors.secondary,
-    backgroundColor: colors.secondary + "10",
-  },
-  optionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  // Kotak huruf
-  letterBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-  },
-  letterBoxSelected: {
-    backgroundColor: colors.secondary,
-    borderColor: colors.secondary,
-  },
-  letterText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: colors.primary,
-  },
-  letterTextSelected: {
-    color: colors.primary,
-  },
-  optionText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: colors.primary,
-  },
-  optionTextSelected: {
-    color: colors.primary,
-    fontWeight: "500",
+    borderColor: "#ddd",
   },
 
-  // Tombol navigasi
-  navigationButtons: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 20,
+  optionSelected: {
+    borderColor: "#800000",
+    backgroundColor: "#FFF0F0",
   },
+
+  optionText: {
+    fontSize: 15,
+    color: "#333",
+  },
+
+  optionTextSelected: {
+    color: "#800000",
+    fontWeight: "600",
+  },
+
+  buttonRow: {
+    flexDirection: "row",
+    marginTop: 20,
+    gap: 10,
+  },
+
   prevButton: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
     backgroundColor: "#fff",
-    paddingVertical: 14,
-    borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: "#800000",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
   },
-  prevButtonText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: colors.primary,
+
+  prevText: {
+    color: "#800000",
+    fontWeight: "600",
   },
+
   nextButton: {
     flex: 1,
-    flexDirection: "row",
+    backgroundColor: "#800000",
+    padding: 14,
+    borderRadius: 10,
     alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
-  nextButtonText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#fff",
   },
 
-  // Hasil akhir
-  resultContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 30,
+  nextText: {
+    color: "#fff",
+    fontWeight: "600",
   },
+
+  resultBox: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
   resultEmoji: {
-    fontSize: 64,
+    fontSize: 60,
+    marginBottom: 10,
+  },
+
+  resultTitle: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#800000",
+    marginBottom: 10,
+  },
+
+  resultScore: {
+    fontSize: 20,
     marginBottom: 20,
   },
-  resultTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: colors.primary,
-    marginBottom: 16,
-  },
-  resultScore: {
-    fontSize: 36,
-    fontWeight: "bold",
-    color: colors.text,
-    marginBottom: 12,
-  },
-  resultMessage: {
-    fontSize: 16,
-    color: colors.textLight,
-    textAlign: "center",
-    marginBottom: 30,
-  },
+
   restartButton: {
-    backgroundColor: colors.secondary,
-    paddingVertical: 14,
-    paddingHorizontal: 30,
-    borderRadius: 12,
-  },
-  restartButtonText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: colors.primary,
-  },
-
-  spacer: {
-    height: 80,
-  },
-
-  // Navbar
-  navbar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    backgroundColor: "#fff",
-    paddingVertical: 15,
-    borderTopWidth: 0.5,
-    borderTopColor: "#ddd",
-  },
-  navItem: {
-    alignItems: "center",
-    paddingVertical: 5,
-    paddingHorizontal: 12,
+    backgroundColor: "#FFD700",
+    padding: 12,
     borderRadius: 10,
+    marginBottom: 10,
+    width: 200,
+    alignItems: "center",
   },
-  navItemActive: {
-    backgroundColor: "#f3e8e5",
+
+  restartText: {
+    fontWeight: "700",
+    color: "#800000",
   },
-  navText: {
-    fontSize: 10,
-    color: "#888",
-    marginTop: 4,
+
+  backToPrepButton: {
+    borderWidth: 1,
+    borderColor: "#800000",
+    padding: 12,
+    borderRadius: 10,
+    width: 200,
+    alignItems: "center",
   },
-  navTextActive: {
-    fontSize: 10,
-    color: "#b55a3c",
-    fontWeight: "bold",
-    marginTop: 4,
+
+  backToPrepText: {
+    color: "#800000",
+    fontWeight: "600",
   },
 });

@@ -10,33 +10,43 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import colors from "../../assets/theme/colors";
 
 export default function Preparation() {
-  const [activeMenu, setActiveMenu] = useState("home");
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { categoryId, categoryTitle } = route.params || {};
   const [playerName, setPlayerName] = useState("");
 
-  const menus = [
-    { key: "home", label: "HOME", icon: "home-outline", iconActive: "home" },
-    { key: "leaderboard", label: "LEADERBOARD", icon: "trophy-outline", iconActive: "trophy" },
-    { key: "history", label: "HISTORY", icon: "time-outline", iconActive: "time" },
-  ];
-
-  const handleMenuPress = (key) => {
+  const handleStart = () => {
+    if (!playerName.trim()) return;
+    // PERBAIKAN: Navigasi ke Quiz dengan membawa data
+    navigation.navigate("Quiz", { 
+      playerName,
+      categoryId,
+      categoryTitle 
+    });
   };
 
-  const handleStartQuiz = () => {
+  const handleBackToHome = () => {
+    // PERBAIKAN: Kembali ke HomeScreen (bukan Home)
+    navigation.navigate("HomeScreen");
   };
 
   return (
-    <SafeAreaView style={styles.wrapper}>
-      <ScrollView 
+    <SafeAreaView style={styles.wrapper} edges={["top"]}>
+      <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>QuizNusa</Text>
-        <Text style={styles.subtitle}>Kenali Budayamu, Banggakan Negerimu</Text>
+        {/* BACK BUTTON */}
+        <TouchableOpacity onPress={handleBackToHome} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#800000" />
+          <Text style={styles.backButtonText}>  Kembali</Text>
+        </TouchableOpacity>
 
+        {/* IMAGE */}
         <View style={styles.imageContainer}>
           <Image
             source={require("../../assets/seni_tari.jpg")}
@@ -44,74 +54,55 @@ export default function Preparation() {
           />
           <View style={styles.overlay}>
             <Text style={styles.overlayLabel}>KUIS TERPILIH</Text>
-            <Text style={styles.overlayTitle}>Seni Tari</Text>
+            <Text style={styles.overlayTitle}>
+              {categoryTitle || "Seni Nusantara"}
+            </Text>
           </View>
         </View>
 
+        {/* CONTENT */}
         <Text style={styles.sectionTitle}>Persiapan Kuis</Text>
         <Text style={styles.sectionDesc}>
-          Selamat datang kembali! Silakan masukkan nama Anda untuk memulai 
-          petualangan budaya ini dan mencatatkan skor terbaik Anda.
+          Masukkan nama kamu sebelum mulai kuis agar skor bisa tercatat.
         </Text>
 
-        <Text style={styles.inputLabel}>MASUKKAN NAMA ANDA</Text>
+        {/* INPUT */}
+        <Text style={styles.inputLabel}>MASUKKAN NAMA</Text>
         <TextInput
           style={styles.input}
-          placeholder="Tuliskan nama lengkap..."
-          placeholderTextColor={colors.textLight}
+          placeholder="Nama kamu..."
+          placeholderTextColor={colors.textLight || "#999"}
           value={playerName}
           onChangeText={setPlayerName}
         />
 
-        <View style={styles.startButton}>
-          <Text style={styles.startButtonText}>MULAI KUIS</Text>
-        </View>
+        {/* BUTTON */}
+        <TouchableOpacity
+          style={[styles.startButton, !playerName.trim() && styles.startButtonDisabled]}
+          onPress={handleStart}
+          activeOpacity={0.8}
+          disabled={!playerName.trim()}
+        >
+          <Text style={styles.startButtonText}>
+            {playerName.trim() ? "MULAI KUIS" : "ISI NAMA DULU"}
+          </Text>
+        </TouchableOpacity>
 
+        {/* INFO */}
         <View style={styles.infoRow}>
           <View style={styles.infoCard}>
-            <View style={[styles.iconCircle, { backgroundColor: "#2196F315" }]}>
-              <Ionicons name="time-outline" size={24} color="#2196F3" />
-            </View>
-            <View style={styles.infoTextContainer}>
-              <Text style={styles.infoLabel}>DURASI</Text>
-              <Text style={styles.infoValue}>15 Menit</Text>
-            </View>
+            <Ionicons name="time-outline" size={22} color="#2196F3" />
+            <Text style={styles.infoText}>15 Menit</Text>
           </View>
 
           <View style={styles.infoCard}>
-            <View style={[styles.iconCircle, { backgroundColor: "#FFC10715" }]}>
-              <Ionicons name="help-circle-outline" size={24} color="#FFC107" />
-            </View>
-            <View style={styles.infoTextContainer}>
-              <Text style={styles.infoLabel}>PERTANYAAN</Text>
-              <Text style={styles.infoValue}>10 Soal</Text>
-            </View>
+            <Ionicons name="help-circle-outline" size={22} color="#FFC107" />
+            <Text style={styles.infoText}>10 Soal</Text>
           </View>
         </View>
 
-        <View style={styles.spacer} />
+        <View style={{ height: 40 }} />
       </ScrollView>
-
-      <View style={styles.navbar}>
-        {menus.map((menu) => {
-          const isActive = activeMenu === menu.key;
-          return (
-            <View
-              key={menu.key}
-              style={[styles.navItem, isActive && styles.navItemActive]}
-            >
-              <Ionicons
-                name={isActive ? menu.iconActive : menu.icon}
-                size={22}
-                color={isActive ? colors.primary : "#999"}
-              />
-              <Text style={[styles.navText, isActive && styles.navTextActive]}>
-                {menu.label}
-              </Text>
-            </View>
-          );
-        })}
-      </View>
     </SafeAreaView>
   );
 }
@@ -119,190 +110,121 @@ export default function Preparation() {
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background || "#F5F5F5",
   },
   container: {
     padding: 25,
     paddingTop: 15,
-    paddingBottom: 0,
-  },
-  
-  // Header
-  title: {
-    fontSize: 34,
-    fontWeight: "700",
-    color: "#800000",
-    textAlign: "center",
-  },
-  subtitle: {
-    fontStyle: "italic",
-    color: colors.subtext,
-    textAlign: "center",
-    marginBottom: 30,
+    paddingBottom: 30,
   },
 
-  // Gambar dengan overlay
+  // BACK BUTTON
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  backButtonText: {
+    fontSize: 18,
+    color: "#800000",
+    marginLeft: 5,
+    fontWeight: "500",
+  },
+
   imageContainer: {
-    marginBottom: 24,
-    position: "relative",
+    marginBottom: 20,
   },
   heroImage: {
     width: "100%",
-    height: 250,
-    borderRadius: 15,
-    borderTopLeftRadius: 50,
-    borderBottomRightRadius: 50,
-    resizeMode: "cover",
+    height: 220,
+    borderRadius: 20,
+    marginTop: 15,
   },
   overlay: {
     position: "absolute",
     bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 50,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    width: "100%",
+    backgroundColor: "rgba(0,0,0,0.5)",
+    padding: 10,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   overlayLabel: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.secondary,
-    marginBottom: 5,
+    color: "#FFD700",
+    fontSize: 13,
   },
   overlayTitle: {
+    color: "#fff",
     fontSize: 20,
     fontWeight: "bold",
-    color: colors.background,
   },
 
-  // Persiapan Kuis
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold",
-    color: colors.text,
-    marginBottom: 12,
+    marginBottom: 5,
+    paddingHorizontal: 10,
+    color: "#333",
   },
   sectionDesc: {
     fontSize: 14,
-    color: colors.textLight,
-    lineHeight: 22,
-    marginBottom: 24,
+    color: colors.textLight || "#666",
+    marginBottom: 20,
+    paddingHorizontal: 10,
   },
 
-  // Input Nama
   inputLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.textLight,
-    letterSpacing: 0.5,
-    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: "bold",
+    marginBottom: 10,
+    paddingHorizontal: 10,
+    color: "#333",
   },
   input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 14,
-    color: colors.text,
     backgroundColor: "#fff",
-    marginBottom: 24,
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 30,
+    marginHorizontal: 5,
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
 
-  // Tombol Mulai Kuis
   startButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 12,
+    backgroundColor: colors.primary || "#800000",
+    padding: 14,
+    borderRadius: 10,
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 30,
+    marginHorizontal: 5,
+  },
+  startButtonDisabled: {
+    backgroundColor: "#ccc",
   },
   startButtonText: {
-    fontSize: 16,
+    color: "#fff",
     fontWeight: "bold",
-    color: colors.background,
-    letterSpacing: 1,
   },
 
-  // Info Row
   infoRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
+    gap: 5,
   },
   infoCard: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 12,
+    padding: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    marginHorizontal: 5,
     shadowColor: "#000",
     shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowRadius: 5,
+    elevation: 2,
   },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  infoTextContainer: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.textLight,
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  infoValue: {
-    fontSize: 14,
+  infoText: {
+    marginTop: 5,
     fontWeight: "bold",
-    color: colors.text,
-  },
-
-  spacer: {
-    height: 80,
-  },
-
-  // Navbar
-  navbar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    backgroundColor: "#fff",
-    paddingVertical: 15,
-    borderTopWidth: 0.5,
-    borderTopColor: "#ddd",
-  },
-  navItem: {
-    alignItems: "center",
-    paddingVertical: 5,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-  },
-  navItemActive: {
-    backgroundColor: "#f3e8e5",
-  },
-  navText: {
-    fontSize: 10,
-    color: "#888",
-    marginTop: 4,
-  },
-  navTextActive: {
-    fontSize: 10,
-    color: "#b55a3c",
-    fontWeight: "bold",
-    marginTop: 4,
+    color: "#333",
   },
 });

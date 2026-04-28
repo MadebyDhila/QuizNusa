@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 import colors from "../../assets/theme/colors";
 
 const historyData = [
@@ -22,35 +23,24 @@ const historyData = [
 
 const getCategoryIcon = (category) => {
   switch (category) {
-    case "Seni Tari":
-      return "accessibility";
-    case "Seni Musik":
-      return "music-note";
-    case "Seni Rupa":
-      return "palette";
-    case "Seni Teater":
-      return "theater-comedy";
-    case "Seni Kriya":
-      return "handyman";
-    default:
-      return "apps";
+    case "Seni Tari": return "accessibility";
+    case "Seni Musik": return "music-note";
+    case "Seni Rupa": return "palette";
+    case "Seni Teater": return "theater-comedy";
+    case "Seni Kriya": return "handyman";
+    default: return "apps";
   }
 };
 
 export default function History() {
-  const [activeMenu, setActiveMenu] = useState("history");
-
-  const menus = [
-    { key: "home", label: "HOME", icon: "home-outline", iconActive: "home" },
-    { key: "leaderboard", label: "LEADERBOARD", icon: "trophy-outline", iconActive: "trophy" },
-    { key: "history", label: "HISTORY", icon: "time-outline", iconActive: "time" },
-  ];
+  const navigation = useNavigation();
 
   const HistoryItem = ({ item }) => {
     const iconName = getCategoryIcon(item.category);
-    
+
     return (
       <View style={styles.historyCard}>
+        {/* HEADER */}
         <View style={styles.cardHeader}>
           <View style={styles.dateContainer}>
             <Ionicons name="calendar-outline" size={14} color={colors.textLight} />
@@ -58,6 +48,7 @@ export default function History() {
           </View>
         </View>
 
+        {/* BODY */}
         <View style={styles.cardBody}>
           <View style={styles.categoryContainer}>
             <View style={styles.iconBox}>
@@ -65,7 +56,7 @@ export default function History() {
             </View>
             <Text style={styles.category}>{item.category}</Text>
           </View>
-          
+
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Ionicons name="help-circle-outline" size={14} color={colors.textLight} />
@@ -78,11 +69,16 @@ export default function History() {
           </View>
         </View>
 
+        {/* FOOTER */}
         <View style={styles.cardFooter}>
           <Text style={styles.scoreText}>
             Skor: {item.score}/{item.totalQuestions}
           </Text>
-          <TouchableOpacity style={styles.detailButton} activeOpacity={0.7}>
+
+          <TouchableOpacity
+            style={styles.detailButton}
+            onPress={() => navigation.navigate("Quiz")}
+          >
             <Text style={styles.detailButtonText}>Lihat Detail</Text>
             <Ionicons name="chevron-forward" size={16} color={colors.primary} />
           </TouchableOpacity>
@@ -92,8 +88,8 @@ export default function History() {
   };
 
   return (
-    <SafeAreaView style={styles.wrapper}>
-      <ScrollView 
+    <SafeAreaView style={styles.wrapper} edges={["top"]}>
+      <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
@@ -101,34 +97,12 @@ export default function History() {
 
         <View style={styles.listContainer}>
           <Text style={styles.listTitle}>Aktivitas Terbaru</Text>
-          
+
           {historyData.map((item) => (
             <HistoryItem key={item.id} item={item} />
           ))}
         </View>
-        <View style={styles.spacer} />
       </ScrollView>
-
-      <View style={styles.navbar}>
-        {menus.map((menu) => {
-          const isActive = activeMenu === menu.key;
-          return (
-            <View
-              key={menu.key}
-              style={[styles.navItem, isActive && styles.navItemActive]}
-            >
-              <Ionicons
-                name={isActive ? menu.iconActive : menu.icon}
-                size={22}
-                color={isActive ? colors.primary : "#999"}
-              />
-              <Text style={[styles.navText, isActive && styles.navTextActive]}>
-                {menu.label}
-              </Text>
-            </View>
-          );
-        })}
-      </View>
     </SafeAreaView>
   );
 }
@@ -138,13 +112,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+
   container: {
     padding: 25,
     paddingTop: 15,
-    paddingBottom: 0,
+    paddingBottom: 140, // 🔥 FIX UTAMA (biar gak ketutup navbar)
   },
-  
-  // Header
+
   title: {
     fontSize: 34,
     fontWeight: "700",
@@ -153,56 +127,54 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
 
-  // Daftar history
   listContainer: {
     flex: 1,
   },
+
   listTitle: {
     fontSize: 20,
     fontWeight: "bold",
     color: colors.text,
     marginBottom: 16,
   },
-  
-  // Card history
+
   historyCard: {
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
     elevation: 3,
   },
+
   cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     marginBottom: 12,
-    paddingBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    paddingBottom: 8,
   },
+
   dateContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
   },
+
   date: {
     fontSize: 12,
     color: colors.textLight,
   },
+
   cardBody: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
+
   categoryContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     marginBottom: 8,
   },
-  // Icon kotak
+
   iconBox: {
     width: 50,
     height: 50,
@@ -211,86 +183,50 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
   category: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.primary,
   },
+
   statsRow: {
     flexDirection: "row",
     gap: 16,
     marginLeft: 52,
   },
+
   statItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
+
   statText: {
     fontSize: 13,
     color: colors.textLight,
   },
+
   cardFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 12,
-    marginTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    marginTop: 10,
   },
-  // Skor
+
   scoreText: {
-    fontSize: 14,
     fontWeight: "bold",
     color: colors.primary,
   },
+
   detailButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
+
   detailButtonText: {
     fontSize: 12,
-    fontWeight: "500",
     color: colors.primary,
-  },
-
-  spacer: {
-    height: 80,
-  },
-
-  // Navbar
-  navbar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    backgroundColor: "#fff",
-    paddingVertical: 15,
-    borderTopWidth: 0.5,
-    borderTopColor: "#ddd",
-  },
-  navItem: {
-    alignItems: "center",
-    paddingVertical: 5,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-  },
-  navItemActive: {
-    backgroundColor: "#f3e8e5",
-  },
-  navText: {
-    fontSize: 10,
-    color: "#888",
-    marginTop: 4,
-  },
-  navTextActive: {
-    fontSize: 10,
-    color: "#b55a3c",
-    fontWeight: "bold",
-    marginTop: 4,
   },
 });
