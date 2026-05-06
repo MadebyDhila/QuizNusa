@@ -1,12 +1,12 @@
 // src/screens/Home.jsx
-import React from "react";
+import React, { useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
   Image,
-  ScrollView,
   TouchableOpacity,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -17,40 +17,77 @@ import { categories } from "../data/Categories";
 export default function Home() {
   const navigation = useNavigation();
 
-  // 🔥 CUMA INI YANG DIUBAH (ke Preparation)
+  // Membuat nilai awal Animated dengan useRef
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  // Menggunakan diffClamp untuk membatasi perubahan nilai
+  const diffClampY = Animated.diffClamp(scrollY, 0, 120);
+
+  // Interpolasi untuk mengubah nilai scroll menjadi translateY
+  const headerTranslateY = diffClampY.interpolate({
+    inputRange: [0, 120],
+    outputRange: [0, -80],
+    extrapolate: "clamp",
+  });
+
+  // Interpolasi untuk efek fade pada header saat scroll
+  const headerOpacity = diffClampY.interpolate({
+    inputRange: [0, 60, 120],
+    outputRange: [1, 0.5, 0],
+    extrapolate: "clamp",
+  });
+
   const handleStartQuiz = () => {
     navigation.navigate("Preparation");
   };
 
   const handleCategoryPress = (categoryId, categoryTitle) => {
-    navigation.navigate("Preparation", { 
+    navigation.navigate("Preparation", {
       categoryId,
-      categoryTitle 
+      categoryTitle,
     });
   };
 
   return (
     <SafeAreaView style={styles.wrapper} edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={styles.container}
+      {/* Animated.ScrollView dengan onScroll dan Animated.event */}
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.container}
       >
-        {/* HEADER */}
-        <Text style={styles.title}>QuizNusa</Text>
-        <Text style={styles.subtitle}>
-          Kenali Budayamu, Banggakan Negerimu
-        </Text>
+        {/* Header dengan animasi translateY dan opacity */}
+        <Animated.View
+          style={[
+            styles.headerWrapper,
+            {
+              transform: [{ translateY: headerTranslateY }],
+              opacity: headerOpacity,
+            },
+          ]}
+        >
+          <Text style={styles.title}>QuizNusa</Text>
+          <Text style={styles.subtitle}>
+            Kenali Budayamu, Banggakan Negerimu
+          </Text>
+        </Animated.View>
 
+        {/* CARD - tanpa animasi scroll agar tetap terlihat */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Kuis Ragam Seni Nusantara</Text>
           <Text style={styles.cardDesc}>
-            Siap-siap! Di kuis ini kamu akan menemukan berbagai pertanyaan dari beragam jenis kesenian. 
-            Dari musik, tari, hingga seni rupa semuanya ada di sini. Yuk uji seberapa luas pengetahuan senimu!
+            Siap-siap! Di kuis ini kamu akan menemukan berbagai pertanyaan dari
+            beragam jenis kesenian. Dari musik, tari, hingga seni rupa semuanya
+            ada di sini. Yuk uji seberapa luas pengetahuan senimu!
           </Text>
 
-          <TouchableOpacity 
-            style={styles.button} 
-            activeOpacity={0.8} 
+          <TouchableOpacity
+            style={styles.button}
+            activeOpacity={0.8}
             onPress={handleStartQuiz}
           >
             <Text style={styles.buttonText}>START QUIZ</Text>
@@ -62,14 +99,16 @@ export default function Home() {
           />
         </View>
 
+        {/* Section Header */}
         <Text style={styles.sectionTitle}>Mau main apa hari ini?</Text>
         <Text style={styles.sectionSubtitle}>
           Yuk pilih tantangan seru dan uji pengetahuanmu!
         </Text>
 
+        {/* Category Items */}
         {categories?.map((category) => (
-          <TouchableOpacity 
-            key={category.id} 
+          <TouchableOpacity
+            key={category.id}
             onPress={() => handleCategoryPress(category.id, category.title)}
             activeOpacity={0.7}
           >
@@ -80,7 +119,7 @@ export default function Home() {
             />
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }
@@ -94,7 +133,11 @@ const styles = StyleSheet.create({
   container: {
     padding: 25,
     paddingTop: 20,
-    paddingBottom: 30, // ✅ tetap sama
+    paddingBottom: 30,
+  },
+
+  headerWrapper: {
+    marginBottom: 10,
   },
 
   title: {
@@ -121,6 +164,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
+    elevation: 5,
   },
 
   cardTitle: {

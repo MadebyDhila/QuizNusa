@@ -1,12 +1,12 @@
 // src/screens/Leaderboard.jsx
-import React, { useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   FlatList,
   TouchableOpacity,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -37,6 +37,33 @@ const categories = [
 export default function Leaderboard() {
   const [selectedCategory, setSelectedCategory] = useState("Seni Campuran");
 
+  // Membuat nilai awal Animated dengan useRef
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  // Menggunakan diffClamp untuk membatasi perubahan nilai
+  const diffClampY = Animated.diffClamp(scrollY, 0, 100);
+
+  // Interpolasi untuk header title
+  const headerTranslateY = diffClampY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [0, -60],
+    extrapolate: "clamp",
+  });
+
+  // Interpolasi untuk opacity header saat scroll
+  const headerOpacity = diffClampY.interpolate({
+    inputRange: [0, 50, 100],
+    outputRange: [1, 0.6, 0],
+    extrapolate: "clamp",
+  });
+
+  // Interpolasi untuk scale effect pada top 3 container
+  const topThreeScale = diffClampY.interpolate({
+    inputRange: [0, 50, 100],
+    outputRange: [1, 0.95, 0.9],
+    extrapolate: "clamp",
+  });
+
   const CategoryItem = ({ item }) => {
     const isActive = selectedCategory === item.name;
     return (
@@ -62,15 +89,49 @@ export default function Leaderboard() {
     );
   };
 
+  // Animasi untuk setiap item leaderboard (staggered saat mount)
+  const itemAnims = useRef(
+    leaderboardData.slice(3).map(() => new Animated.Value(0))
+  ).current;
+
+  React.useEffect(() => {
+    // Staggered animation untuk list items
+    itemAnims.forEach((anim, index) => {
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 400,
+        delay: 300 + index * 80,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, []);
+
   return (
     <SafeAreaView style={styles.wrapper} edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={styles.container}
+      {/* Animated.ScrollView dengan onScroll dan Animated.event */}
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.container}
       >
-        <Text style={styles.title}>Leaderboard</Text>
+        {/* Title dengan animasi scroll */}
+        <Animated.Text
+          style={[
+            styles.title,
+            {
+              transform: [{ translateY: headerTranslateY }],
+              opacity: headerOpacity,
+            },
+          ]}
+        >
+          Leaderboard
+        </Animated.Text>
 
-        {/* CATEGORY */}
+        {/* CATEGORY SECTION - tetap terlihat saat scroll */}
         <View style={styles.categorySection}>
           <Text style={styles.categoryTitle}>Kategori</Text>
           <FlatList
@@ -83,17 +144,24 @@ export default function Leaderboard() {
           />
         </View>
 
-        {/* TOP 3 */}
-        <View style={styles.topThreeContainer}>
-          <View style={styles.topCard}>
+        {/* TOP 3 dengan animasi scale saat scroll */}
+        <Animated.View
+          style={[
+            styles.topThreeContainer,
+            {
+              transform: [{ scale: topThreeScale }],
+            },
+          ]}
+        >
+          <Animated.View style={[styles.topCard, styles.topCardLeft]}>
             <Text style={styles.medalText}>🥈</Text>
             <Text style={styles.topName}>{leaderboardData[1].name}</Text>
             <Text style={styles.topScore}>
               {leaderboardData[1].score} poin
             </Text>
-          </View>
+          </Animated.View>
 
-          <View style={[styles.topCard, styles.topCardWinner]}>
+          <Animated.View style={[styles.topCard, styles.topCardWinner]}>
             <Text style={styles.medalText}>🏆</Text>
             <Text style={styles.topNameWinner}>
               {leaderboardData[0].name}
@@ -101,32 +169,50 @@ export default function Leaderboard() {
             <Text style={styles.topScoreWinner}>
               {leaderboardData[0].score} poin
             </Text>
-          </View>
+          </Animated.View>
 
-          <View style={styles.topCard}>
+          <Animated.View style={[styles.topCard, styles.topCardRight]}>
             <Text style={styles.medalText}>🥉</Text>
             <Text style={styles.topName}>{leaderboardData[2].name}</Text>
             <Text style={styles.topScore}>
               {leaderboardData[2].score} poin
             </Text>
-          </View>
-        </View>
+          </Animated.View>
+        </Animated.View>
 
-        {/* LIST */}
+        {/* LIST dengan staggered animation */}
         <View style={styles.listContainer}>
           <Text style={styles.listTitle}>Peringkat Lainnya</Text>
 
           {leaderboardData.slice(3).map((item, index) => (
-            <View key={item.id} style={styles.leaderboardItem}>
+            <Animated.View
+              key={item.id}
+              style={[
+                styles.leaderboardItem,
+                {
+                  opacity: itemAnims[index],
+                  transform: [
+                    {
+                      translateX: itemAnims[index].interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [50, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
               <Text style={styles.rankNumber}>{index + 4}</Text>
               <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.scoreBadgeText}>
-                {item.score} poin
-              </Text>
-            </View>
+              <View style={styles.scoreBadge}>
+                <Text style={styles.scoreBadgeText}>
+                  {item.score} poin
+                </Text>
+              </View>
+            </Animated.View>
           ))}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }
@@ -140,7 +226,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 25,
     paddingTop: 15,
-    paddingBottom: 30, // ✅ aman, gak bikin kotak
+    paddingBottom: 30,
   },
 
   title: {
@@ -203,6 +289,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
+  topCardLeft: {
+    transform: [{ translateX: 0 }],
+  },
+
+  topCardRight: {
+    transform: [{ translateX: 0 }],
+  },
+
   topCardWinner: {
     paddingTop: 20,
     borderWidth: 2,
@@ -261,6 +355,13 @@ const styles = StyleSheet.create({
 
   name: {
     flex: 1,
+  },
+
+  scoreBadge: {
+    backgroundColor: colors.primary + "20",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
 
   scoreBadgeText: {

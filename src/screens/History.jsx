@@ -1,10 +1,10 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
+  Animated,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -35,11 +35,74 @@ const getCategoryIcon = (category) => {
 export default function History() {
   const navigation = useNavigation();
 
-  const HistoryItem = ({ item }) => {
+  // Membuat nilai awal Animated dengan useRef
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  // Menggunakan diffClamp untuk membatasi perubahan nilai
+  const diffClampY = Animated.diffClamp(scrollY, 0, 80);
+
+  // Interpolasi untuk header title
+  const headerTranslateY = diffClampY.interpolate({
+    inputRange: [0, 80],
+    outputRange: [0, -50],
+    extrapolate: "clamp",
+  });
+
+  // Interpolasi untuk opacity header saat scroll
+  const headerOpacity = diffClampY.interpolate({
+    inputRange: [0, 40, 80],
+    outputRange: [1, 0.5, 0],
+    extrapolate: "clamp",
+  });
+
+  // Interpolasi untuk scale effect pada list container
+  const listScale = diffClampY.interpolate({
+    inputRange: [0, 40, 80],
+    outputRange: [1, 0.98, 0.95],
+    extrapolate: "clamp",
+  });
+
+  // Animasi untuk setiap item history (staggered saat mount)
+  const itemAnims = useRef(
+    historyData.map(() => new Animated.Value(0))
+  ).current;
+
+  useEffect(() => {
+    // Staggered animation untuk list items
+    itemAnims.forEach((anim, index) => {
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 500,
+        delay: 200 + index * 100,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, []);
+
+  const HistoryItem = ({ item, index, animatedValue }) => {
     const iconName = getCategoryIcon(item.category);
 
+    // Interpolasi untuk efek slide dari bawah
+    const translateY = animatedValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: [50, 0],
+    });
+
+    const opacity = animatedValue.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: [0, 0.7, 1],
+    });
+
     return (
-      <View style={styles.historyCard}>
+      <Animated.View
+        style={[
+          styles.historyCard,
+          {
+            opacity: opacity,
+            transform: [{ translateY: translateY }],
+          },
+        ]}
+      >
         {/* HEADER */}
         <View style={styles.cardHeader}>
           <View style={styles.dateContainer}>
@@ -71,9 +134,14 @@ export default function History() {
 
         {/* FOOTER */}
         <View style={styles.cardFooter}>
-          <Text style={styles.scoreText}>
+          <Animated.Text style={[
+            styles.scoreText,
+            {
+              transform: [{ scale: animatedValue }],
+            }
+          ]}>
             Skor: {item.score}/{item.totalQuestions}
-          </Text>
+          </Animated.Text>
 
           <TouchableOpacity
             style={styles.detailButton}
@@ -83,26 +151,56 @@ export default function History() {
             <Ionicons name="chevron-forward" size={16} color={colors.primary} />
           </TouchableOpacity>
         </View>
-      </View>
+      </Animated.View>
     );
   };
 
   return (
     <SafeAreaView style={styles.wrapper} edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={styles.container}
+      {/* Animated.ScrollView dengan onScroll dan Animated.event */}
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.container}
       >
-        <Text style={styles.title}>History</Text>
+        {/* Title dengan animasi scroll */}
+        <Animated.Text
+          style={[
+            styles.title,
+            {
+              transform: [{ translateY: headerTranslateY }],
+              opacity: headerOpacity,
+            },
+          ]}
+        >
+          History
+        </Animated.Text>
 
-        <View style={styles.listContainer}>
+        {/* LIST dengan animasi scale saat scroll */}
+        <Animated.View
+          style={[
+            styles.listContainer,
+            {
+              transform: [{ scale: listScale }],
+            },
+          ]}
+        >
           <Text style={styles.listTitle}>Aktivitas Terbaru</Text>
 
-          {historyData.map((item) => (
-            <HistoryItem key={item.id} item={item} />
+          {historyData.map((item, index) => (
+            <HistoryItem 
+              key={item.id} 
+              item={item} 
+              index={index}
+              animatedValue={itemAnims[index]}
+            />
           ))}
-        </View>
-      </ScrollView>
+        </Animated.View>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }
@@ -116,7 +214,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 25,
     paddingTop: 15,
-    paddingBottom: 140, // 🔥 FIX UTAMA (biar gak ketutup navbar)
+    paddingBottom: 140,
   },
 
   title: {
@@ -144,12 +242,16 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
 
   cardHeader: {
     marginBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.border || "#eee",
     paddingBottom: 8,
   },
 
