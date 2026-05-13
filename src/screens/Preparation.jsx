@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// src/screens/Preparation.jsx
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +8,9 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
+  Animated, // Tambahan untuk animasi
+  Keyboard, // Untuk dismiss keyboard
+  TouchableWithoutFeedback, // Untuk dismiss keyboard
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,93 +21,148 @@ export default function Preparation() {
   const navigation = useNavigation();
   const route = useRoute();
   const { categoryId, categoryTitle } = route.params || {};
+  
+  // State untuk TextInput
   const [playerName, setPlayerName] = useState("");
+  
+  // Animasi untuk input (sesuai modul BAB 6 & 7)
+  const inputAnimation = useRef(new Animated.Value(0)).current;
+  const buttonAnimation = useRef(new Animated.Value(1)).current;
+
+  // Animasi saat komponen mount
+  useEffect(() => {
+    Animated.spring(inputAnimation, {
+      toValue: 1,
+      friction: 8,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const handleStart = () => {
     if (!playerName.trim()) return;
-    // PERBAIKAN: Navigasi ke Quiz dengan membawa data
-    navigation.navigate("Quiz", { 
-      playerName,
-      categoryId,
-      categoryTitle 
-    });
+    
+    // Animasi button press
+    Animated.sequence([
+      Animated.timing(buttonAnimation, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonAnimation, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
+    // Sembunyikan keyboard sebelum navigasi
+    Keyboard.dismiss();
+    
+    setTimeout(() => {
+      navigation.navigate("Quiz", { 
+        playerName: playerName.trim(),
+        categoryId,
+        categoryTitle 
+      });
+    }, 150);
   };
 
   const handleBackToHome = () => {
-    // PERBAIKAN: Kembali ke HomeScreen (bukan Home)
     navigation.navigate("HomeScreen");
   };
 
   return (
-    <SafeAreaView style={styles.wrapper} edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* BACK BUTTON */}
-        <TouchableOpacity onPress={handleBackToHome} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#800000" />
-          <Text style={styles.backButtonText}>  Kembali</Text>
-        </TouchableOpacity>
-
-        {/* IMAGE */}
-        <View style={styles.imageContainer}>
-          <Image
-            source={require("../../assets/seni_tari.jpg")}
-            style={styles.heroImage}
-          />
-          <View style={styles.overlay}>
-            <Text style={styles.overlayLabel}>KUIS TERPILIH</Text>
-            <Text style={styles.overlayTitle}>
-              {categoryTitle || "Seni Nusantara"}
-            </Text>
-          </View>
-        </View>
-
-        {/* CONTENT */}
-        <Text style={styles.sectionTitle}>Persiapan Kuis</Text>
-        <Text style={styles.sectionDesc}>
-          Masukkan nama kamu sebelum mulai kuis agar skor bisa tercatat.
-        </Text>
-
-        {/* INPUT */}
-        <Text style={styles.inputLabel}>MASUKKAN NAMA</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Nama kamu..."
-          placeholderTextColor={colors.textLight || "#999"}
-          value={playerName}
-          onChangeText={setPlayerName}
-        />
-
-        {/* BUTTON */}
-        <TouchableOpacity
-          style={[styles.startButton, !playerName.trim() && styles.startButtonDisabled]}
-          onPress={handleStart}
-          activeOpacity={0.8}
-          disabled={!playerName.trim()}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <SafeAreaView style={styles.wrapper} edges={["top"]}>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled" // Penting untuk form
         >
-          <Text style={styles.startButtonText}>
-            {playerName.trim() ? "MULAI KUIS" : "ISI NAMA DULU"}
+          {/* BACK BUTTON */}
+          <TouchableOpacity onPress={handleBackToHome} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#800000" />
+            <Text style={styles.backButtonText}>Kembali</Text>
+          </TouchableOpacity>
+
+          {/* IMAGE */}
+          <View style={styles.imageContainer}>
+            <Image
+              source={require("../../assets/seni_tari.jpg")}
+              style={styles.heroImage}
+            />
+            <View style={styles.overlay}>
+              <Text style={styles.overlayLabel}>KUIS TERPILIH</Text>
+              <Text style={styles.overlayTitle}>
+                {categoryTitle || "Seni Nusantara"}
+              </Text>
+            </View>
+          </View>
+
+          {/* CONTENT */}
+          <Text style={styles.sectionTitle}>Persiapan Kuis</Text>
+          <Text style={styles.sectionDesc}>
+            Masukkan nama kamu sebelum mulai kuis agar skor bisa tercatat.
           </Text>
-        </TouchableOpacity>
 
-        {/* INFO */}
-        <View style={styles.infoRow}>
-          <View style={styles.infoCard}>
-            <Ionicons name="time-outline" size={22} color="#2196F3" />
-            <Text style={styles.infoText}>15 Menit</Text>
+          {/* INPUT - SESUAI MODUL */}
+          <Text style={styles.inputLabel}>MASUKKAN NAMA</Text>
+          <Animated.View
+            style={{
+              transform: [{ scale: inputAnimation }],
+              opacity: inputAnimation,
+            }}
+          >
+            <TextInput
+              style={styles.input}
+              placeholder="Nama kamu..."
+              placeholderTextColor={colors.textLight || "#999"}
+              value={playerName}
+              onChangeText={setPlayerName}
+              // Properti TextInput tambahan sesuai modul:
+              autoCapitalize="words"        // Kapitalisasi awal kata
+              autoCorrect={false}           // Nonaktifkan koreksi otomatis
+              maxLength={30}                // Batasi panjang nama
+              returnKeyType="done"          // Tombol "Done" di keyboard
+              onSubmitEditing={handleStart} // Submit dengan tombol keyboard
+              blurOnSubmit={true}           // Hilangkan fokus setelah submit
+            />
+          </Animated.View>
+
+          {/* BUTTON */}
+          <Animated.View style={{ transform: [{ scale: buttonAnimation }] }}>
+            <TouchableOpacity
+              style={[
+                styles.startButton,
+                !playerName.trim() && styles.startButtonDisabled
+              ]}
+              onPress={handleStart}
+              activeOpacity={0.8}
+              disabled={!playerName.trim()}
+            >
+              <Text style={styles.startButtonText}>
+                {playerName.trim() ? "MULAI KUIS" : "ISI NAMA DULU"}
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* INFO */}
+          <View style={styles.infoRow}>
+            <View style={styles.infoCard}>
+              <Ionicons name="time-outline" size={22} color="#2196F3" />
+              <Text style={styles.infoText}>15 Menit</Text>
+            </View>
+            <View style={styles.infoCard}>
+              <Ionicons name="help-circle-outline" size={22} color="#FFC107" />
+              <Text style={styles.infoText}>10 Soal</Text>
+            </View>
           </View>
 
-          <View style={styles.infoCard}>
-            <Ionicons name="help-circle-outline" size={22} color="#FFC107" />
-            <Text style={styles.infoText}>10 Soal</Text>
-          </View>
-        </View>
-
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </SafeAreaView>
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -117,20 +176,17 @@ const styles = StyleSheet.create({
     paddingTop: 15,
     paddingBottom: 30,
   },
-
-  // BACK BUTTON
   backButton: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
   },
   backButtonText: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#800000",
     marginLeft: 5,
     fontWeight: "500",
   },
-
   imageContainer: {
     marginBottom: 20,
   },
@@ -158,7 +214,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
   },
-
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
@@ -172,7 +227,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingHorizontal: 10,
   },
-
   inputLabel: {
     fontSize: 13,
     fontWeight: "bold",
@@ -188,10 +242,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     borderWidth: 1,
     borderColor: "#ddd",
+    fontSize: 16,
   },
-
   startButton: {
-    backgroundColor: colors.primary || "#800000",
+    backgroundColor: "#800000",
     padding: 14,
     borderRadius: 10,
     alignItems: "center",
@@ -204,11 +258,11 @@ const styles = StyleSheet.create({
   startButtonText: {
     color: "#fff",
     fontWeight: "bold",
+    fontSize: 16,
   },
-
   infoRow: {
     flexDirection: "row",
-    gap: 5,
+    gap: 10,
   },
   infoCard: {
     flex: 1,
