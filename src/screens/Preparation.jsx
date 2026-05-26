@@ -11,11 +11,15 @@ import {
   Animated, // Tambahan untuk animasi
   Keyboard, // Untuk dismiss keyboard
   TouchableWithoutFeedback, // Untuk dismiss keyboard
+  Alert, // ✅ TAMBAHAN: Untuk menampilkan alert jika nama kosong
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import colors from "../../assets/theme/colors";
+
+// ✅ TAMBAHAN: Import Supabase (untuk step selanjutnya, kalau mau langsung simpan)
+// import { supabase } from "../libs/supabase";
 
 export default function Preparation() {
   const navigation = useNavigation();
@@ -39,8 +43,12 @@ export default function Preparation() {
     }).start();
   }, []);
 
+  // ✅ PERBAIKAN: Handle Start dengan Alert
   const handleStart = () => {
-    if (!playerName.trim()) return;
+    if (!playerName.trim()) {
+      Alert.alert("Info", "Masukkan nama kamu dulu ya!");
+      return;
+    }
     
     // Animasi button press
     Animated.sequence([
@@ -103,7 +111,7 @@ export default function Preparation() {
           {/* CONTENT */}
           <Text style={styles.sectionTitle}>Persiapan Kuis</Text>
           <Text style={styles.sectionDesc}>
-            Masukkan nama kamu sebelum mulai kuis agar skor bisa tercatat.
+            Masukkan nama kamu sebelum mulai kuis agar skor bisa tercatat di leaderboard.
           </Text>
 
           {/* INPUT - SESUAI MODUL */}
@@ -116,7 +124,7 @@ export default function Preparation() {
           >
             <TextInput
               style={styles.input}
-              placeholder="Nama kamu..."
+              placeholder="Contoh: Budi Santoso"
               placeholderTextColor={colors.textLight || "#999"}
               value={playerName}
               onChangeText={setPlayerName}

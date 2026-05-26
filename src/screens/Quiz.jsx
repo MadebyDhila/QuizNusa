@@ -6,20 +6,56 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native"; // ✅ TAMBAHAN: import useRoute
 import { SafeAreaView } from "react-native-safe-area-context";
 import { quizData } from "../data/Quiz";
+import { supabase } from "../libs/supabase"; // ✅ TAMBAHAN: import supabase
 
 export default function Quiz() {
   const navigation = useNavigation();
+  const route = useRoute(); // ✅ TAMBAHAN: untuk mengambil params dari Preparation
+  
+  // ✅ TAMBAHAN: Ambil data dari Preparation
+  const { playerName, categoryId, categoryTitle } = route.params || {};
+  
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [isFinished, setIsFinished] = useState(false);
   const [score, setScore] = useState(0);
+  const [isSaving, setIsSaving] = useState(false); // ✅ TAMBAHAN: loading state
 
   const totalQuestions = quizData.length;
   const currentQuestion = quizData[currentIndex];
-  const progressPercent = ((currentIndex + 1) / totalQuestions) * 100; // 🔥 TAMBAH INI
+  const progressPercent = ((currentIndex + 1) / totalQuestions) * 100;
+
+  // ✅ TAMBAHAN: Fungsi untuk menyimpan hasil ke Supabase
+  const saveQuizResult = async (finalScore, totalQ, category, player) => {
+    try {
+      const percentage = Math.round((finalScore / totalQ) * 100);
+      
+      const { data, error } = await supabase
+        .from("quiz_results")
+        .insert({
+          player_name: player,
+          category: category,
+          score: finalScore,
+          total_questions: totalQ,
+          percentage: percentage,
+          completed_at: new Date().toISOString(),
+        });
+      
+      if (error) {
+        console.error("Error saving to Supabase:", error);
+        return false;
+      }
+      
+      console.log("Quiz result saved!", data);
+      return true;
+    } catch (error) {
+      console.error("Error:", error);
+      return false;
+    }
+  };
 
   const handleSelectAnswer = (index) => {
     setSelectedAnswers({
@@ -46,6 +82,10 @@ export default function Quiz() {
       });
 
       setScore(finalScore);
+      
+      // ✅ TAMBAHAN: Simpan hasil ke Supabase sebelum menampilkan result
+      saveQuizResult(finalScore, totalQuestions, categoryTitle || "Seni Nusantara", playerName || "Anonymous");
+      
       setIsFinished(true);
     }
   };
@@ -69,15 +109,27 @@ export default function Quiz() {
 
   // ================= RESULT SCREEN =================
   if (isFinished) {
+    const percentage = Math.round((score / totalQuestions) * 100);
+    
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.resultBox}>
           <Text style={styles.resultEmoji}>🎉</Text>
 
           <Text style={styles.resultTitle}>Selesai!</Text>
+          
+          {/* ✅ TAMBAHAN: Tampilkan nama pemain */}
+          <Text style={styles.playerName}>
+            {playerName || "Pemain"}
+          </Text>
 
           <Text style={styles.resultScore}>
             Skor: {score} / {totalQuestions}
+          </Text>
+          
+          {/* ✅ TAMBAHAN: Tampilkan persentase */}
+          <Text style={styles.resultPercentage}>
+            {percentage}%
           </Text>
 
           <TouchableOpacity
@@ -111,7 +163,7 @@ export default function Quiz() {
           <Text style={styles.backButtonText}>←   Kembali</Text>
         </TouchableOpacity>
 
-        {/* 🔥 PROGRESS BAR TIPIS - TAMBAHAN DI SINI */}
+        {/* PROGRESS BAR */}
         <View style={styles.progressBarContainer}>
           <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
         </View>
@@ -202,7 +254,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
-  // 🔥 PROGRESS BAR TIPIS - TAMBAHAN STYLE DI SINI
   progressBarContainer: {
     height: 3,
     backgroundColor: "#E0E0E0",
@@ -300,6 +351,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    padding: 20,
   },
 
   resultEmoji: {
@@ -313,9 +365,25 @@ const styles = StyleSheet.create({
     color: "#800000",
     marginBottom: 10,
   },
+  
+  // ✅ TAMBAHAN: Style untuk nama pemain di result
+  playerName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 5,
+  },
 
   resultScore: {
     fontSize: 20,
+    marginBottom: 5,
+  },
+  
+  // ✅ TAMBAHAN: Style untuk persentase
+  resultPercentage: {
+    fontSize: 16,
+    color: "#800000",
+    fontWeight: "bold",
     marginBottom: 20,
   },
 

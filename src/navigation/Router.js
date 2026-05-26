@@ -1,3 +1,4 @@
+// navigation/Router.js
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -12,13 +13,13 @@ import Quiz from "../screens/Quiz";
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-// Stack untuk Home (biar bisa ke Preparation dan Quiz)
+// Stack untuk Home (biar bisa ke Preparation, Quiz, dan Result)
 function HomeStack() {
   return (
     <Stack.Navigator 
       screenOptions={{ 
         headerShown: false,
-        gestureEnabled: false, // 🔥 NONAKTIFKAN GESTURE SWIPE BACK
+        gestureEnabled: false, // NONAKTIFKAN GESTURE SWIPE BACK
       }}
     >
       <Stack.Screen name="HomeScreen" component={Home} />
@@ -41,7 +42,7 @@ export default function Router() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        gestureEnabled: false, // 🔥 NONAKTIFKAN DI TAB JUGA
+        gestureEnabled: false, // NONAKTIFKAN DI TAB JUGA
 
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;

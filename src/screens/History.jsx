@@ -1,25 +1,21 @@
-import React, { useRef, useEffect } from "react";
+// src/screens/History.jsx
+import React, { useRef, useEffect, useState } from "react"; // ✅ TAMBAH: useState
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Animated,
+  ActivityIndicator, // ✅ TAMBAH: loading state
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native"; // ✅ TAMBAH: useFocusEffect
 import colors from "../../assets/theme/colors";
+import { supabase } from "../libs/supabase"; // ✅ TAMBAH: import supabase
 
-const historyData = [
-  { id: 1, date: "15 April 2026", category: "Seni Tari", score: 85, totalQuestions: 10, time: "5 menit" },
-  { id: 2, date: "14 April 2026", category: "Seni Musik", score: 70, totalQuestions: 10, time: "6 menit" },
-  { id: 3, date: "12 April 2026", category: "Seni Rupa", score: 90, totalQuestions: 10, time: "4 menit" },
-  { id: 4, date: "10 April 2026", category: "Seni Campuran", score: 75, totalQuestions: 20, time: "7 menit" },
-  { id: 5, date: "08 April 2026", category: "Seni Teater", score: 60, totalQuestions: 10, time: "5 menit" },
-  { id: 6, date: "05 April 2026", category: "Seni Kriya", score: 95, totalQuestions: 10, time: "4 menit" },
-  { id: 7, date: "01 April 2026", category: "Seni Tari", score: 80, totalQuestions: 10, time: "6 menit" },
-];
+// ✅ HAPUS: data statis historyData (akan diambil dari Supabase)
+// const historyData = [ ... ];
 
 const getCategoryIcon = (category) => {
   switch (category) {
@@ -28,12 +24,74 @@ const getCategoryIcon = (category) => {
     case "Seni Rupa": return "palette";
     case "Seni Teater": return "theater-comedy";
     case "Seni Kriya": return "handyman";
+    case "Seni Campuran": return "apps";
     default: return "apps";
   }
 };
 
+// ✅ TAMBAH: Fungsi untuk format tanggal dari ISO ke format yang lebih mudah dibaca
+const formatDate = (dateString) => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+};
+
+// ✅ TAMBAH: Fungsi untuk format waktu (detik ke menit)
+const formatTime = (seconds) => {
+  if (!seconds) return "-";
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  if (minutes === 0) return `${remainingSeconds} detik`;
+  return `${minutes} menit ${remainingSeconds > 0 ? `${remainingSeconds} detik` : ''}`;
+};
+
 export default function History() {
   const navigation = useNavigation();
+  
+  // ✅ TAMBAH: State untuk data dari Supabase
+  const [historyData, setHistoryData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // ✅ TAMBAH: Fungsi untuk mengambil data history dari Supabase
+  const fetchHistory = async () => {
+    setLoading(true);
+    try {
+      // Ambil data dari tabel quiz_results, urutkan dari yang terbaru
+      const { data, error } = await supabase
+        .from("quiz_results")
+        .select("*")
+        .order("completed_at", { ascending: false })
+        .limit(50);
+      
+      if (error) throw error;
+      
+      // Format data untuk ditampilkan
+      const formattedData = data.map((item, index) => ({
+        id: item.id || index + 1,
+        date: formatDate(item.completed_at),
+        category: item.category,
+        score: item.score,
+        totalQuestions: item.total_questions,
+        percentage: item.percentage,
+        time: formatTime(item.time_spent) || "-",
+        rawDate: item.completed_at,
+      }));
+      
+      setHistoryData(formattedData);
+    } catch (error) {
+      console.error("Error fetching history:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ TAMBAH: Refresh data setiap kali halaman History difokuskan
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchHistory();
+    }, [])
+  );
 
   // Membuat nilai awal Animated dengan useRef
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -63,21 +121,25 @@ export default function History() {
   });
 
   // Animasi untuk setiap item history (staggered saat mount)
-  const itemAnims = useRef(
-    historyData.map(() => new Animated.Value(0))
-  ).current;
+  const itemAnims = useRef([]).current;
 
   useEffect(() => {
-    // Staggered animation untuk list items
-    itemAnims.forEach((anim, index) => {
-      Animated.timing(anim, {
-        toValue: 1,
-        duration: 500,
-        delay: 200 + index * 100,
-        useNativeDriver: true,
-      }).start();
-    });
-  }, []);
+    // Reset dan buat animasi baru saat data berubah
+    if (historyData.length > 0) {
+      const anims = historyData.map(() => new Animated.Value(0));
+      itemAnims.length = 0;
+      itemAnims.push(...anims);
+      
+      anims.forEach((anim, index) => {
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 500,
+          delay: 200 + index * 100,
+          useNativeDriver: true,
+        }).start();
+      });
+    }
+  }, [historyData]);
 
   const HistoryItem = ({ item, index, animatedValue }) => {
     const iconName = getCategoryIcon(item.category);
@@ -109,6 +171,13 @@ export default function History() {
             <Ionicons name="calendar-outline" size={14} color={colors.textLight} />
             <Text style={styles.date}>{item.date}</Text>
           </View>
+          {/* ✅ TAMBAH: Badge persentase */}
+          <View style={[
+            styles.percentageBadge,
+            item.percentage >= 70 ? styles.percentageGood : styles.percentageAverage
+          ]}>
+            <Text style={styles.percentageText}>{item.percentage}%</Text>
+          </View>
         </View>
 
         {/* BODY */}
@@ -125,10 +194,12 @@ export default function History() {
               <Ionicons name="help-circle-outline" size={14} color={colors.textLight} />
               <Text style={styles.statText}>{item.totalQuestions} soal</Text>
             </View>
-            <View style={styles.statItem}>
-              <Ionicons name="time-outline" size={14} color={colors.textLight} />
-              <Text style={styles.statText}>{item.time}</Text>
-            </View>
+            {item.time !== "-" && (
+              <View style={styles.statItem}>
+                <Ionicons name="time-outline" size={14} color={colors.textLight} />
+                <Text style={styles.statText}>{item.time}</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -147,7 +218,7 @@ export default function History() {
             style={styles.detailButton}
             onPress={() => navigation.navigate("Quiz")}
           >
-            <Text style={styles.detailButtonText}>Lihat Detail</Text>
+            <Text style={styles.detailButtonText}>Coba Lagi</Text>
             <Ionicons name="chevron-forward" size={16} color={colors.primary} />
           </TouchableOpacity>
         </View>
@@ -155,9 +226,20 @@ export default function History() {
     );
   };
 
+  // ✅ TAMBAH: Tampilkan loading indicator
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.wrapper} edges={["top"]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Memuat riwayat...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.wrapper} edges={["top"]}>
-      {/* Animated.ScrollView dengan onScroll dan Animated.event */}
       <Animated.ScrollView
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event(
@@ -191,14 +273,25 @@ export default function History() {
         >
           <Text style={styles.listTitle}>Aktivitas Terbaru</Text>
 
-          {historyData.map((item, index) => (
-            <HistoryItem 
-              key={item.id} 
-              item={item} 
-              index={index}
-              animatedValue={itemAnims[index]}
-            />
-          ))}
+          {historyData.length === 0 ? (
+            // ✅ TAMBAH: Empty state
+            <View style={styles.emptyContainer}>
+              <Ionicons name="document-text-outline" size={64} color={colors.textLight} />
+              <Text style={styles.emptyTitle}>Belum Ada Riwayat</Text>
+              <Text style={styles.emptyText}>
+                Yuk ikuti kuis dulu! Riwayat belajarmu akan muncul di sini.
+              </Text>
+            </View>
+          ) : (
+            historyData.map((item, index) => (
+              <HistoryItem 
+                key={item.id} 
+                item={item} 
+                index={index}
+                animatedValue={itemAnims[index] || new Animated.Value(1)}
+              />
+            ))
+          )}
         </Animated.View>
       </Animated.ScrollView>
     </SafeAreaView>
@@ -249,6 +342,9 @@ const styles = StyleSheet.create({
   },
 
   cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.border || "#eee",
@@ -264,6 +360,23 @@ const styles = StyleSheet.create({
   date: {
     fontSize: 12,
     color: colors.textLight,
+  },
+
+  // ✅ TAMBAH: Style untuk badge persentase
+  percentageBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  percentageGood: {
+    backgroundColor: "#4caf5020",
+  },
+  percentageAverage: {
+    backgroundColor: "#ff980020",
+  },
+  percentageText: {
+    fontSize: 12,
+    fontWeight: "bold",
   },
 
   cardBody: {
@@ -330,5 +443,36 @@ const styles = StyleSheet.create({
   detailButtonText: {
     fontSize: 12,
     color: colors.primary,
+  },
+
+  // ✅ TAMBAH: Style untuk loading state
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    color: colors.textLight,
+  },
+
+  // ✅ TAMBAH: Style untuk empty state
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: colors.text,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textLight,
+    textAlign: "center",
+    paddingHorizontal: 40,
   },
 });
